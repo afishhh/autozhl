@@ -1,0 +1,11 @@
+[package]
+name = "autozhl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.26", features = ["derive"] }
+memchr = "2.7.4"
+
+[profile.dev]
+opt-level = 2
