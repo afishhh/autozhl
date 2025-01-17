@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{collections::HashMap, ffi::CStr, fmt::Debug, ops::Range};
 
 use crate::{elf::DwarfSections, util::SliceExt, warn};
@@ -274,28 +276,28 @@ impl<'a> AttrValue<'a> {
     }
 }
 
-enum SecOffsetClass {
-    LinePtr,
-    LocListPtr,
-    MacPtr,
-    RangeListPtr,
+enum SecOffsetPtrClass {
+    Line,
+    LocList,
+    Macro,
+    RangeList,
 }
 
-impl SecOffsetClass {
+impl SecOffsetPtrClass {
     fn for_name(name: ops::DW_AT) -> Self {
         use ops::DW_AT::*;
         match name {
-            DW_AT_stmt_list => Self::LinePtr,
-            DW_AT_ranges => Self::RangeListPtr,
-            DW_AT_location => Self::LocListPtr,
-            DW_AT_string_length => Self::LocListPtr,
-            DW_AT_data_member_location => Self::LocListPtr,
-            DW_AT_frame_base => Self::LocListPtr,
-            DW_AT_macro_info => Self::MacPtr,
-            DW_AT_segment => Self::LocListPtr,
-            DW_AT_static_link => Self::LocListPtr,
-            DW_AT_use_location => Self::LocListPtr,
-            DW_AT_vtable_elem_location => Self::LocListPtr,
+            DW_AT_stmt_list => Self::Line,
+            DW_AT_ranges => Self::RangeList,
+            DW_AT_location => Self::LocList,
+            DW_AT_string_length => Self::LocList,
+            DW_AT_data_member_location => Self::LocList,
+            DW_AT_frame_base => Self::LocList,
+            DW_AT_macro_info => Self::Macro,
+            DW_AT_segment => Self::LocList,
+            DW_AT_static_link => Self::LocList,
+            DW_AT_use_location => Self::LocList,
+            DW_AT_vtable_elem_location => Self::LocList,
             at => panic!("sec_offset unsupported for {at:?}"),
         }
     }
@@ -351,15 +353,15 @@ fn consume_attr_value<'a>(
         ops::DW_FORM::DW_FORM_ref8 => AttrValue::EntryIndex(content.consume_u64_le() as usize),
         ops::DW_FORM::DW_FORM_ref_udata => todo!(),
         ops::DW_FORM::DW_FORM_indirect => todo!(),
-        ops::DW_FORM::DW_FORM_sec_offset => match SecOffsetClass::for_name(name) {
-            SecOffsetClass::LinePtr => {
+        ops::DW_FORM::DW_FORM_sec_offset => match SecOffsetPtrClass::for_name(name) {
+            SecOffsetPtrClass::Line => {
                 AttrValue::LineOffset(content.consume_u32_or_u64_address_le(cu.dwarf64))
             }
-            SecOffsetClass::LocListPtr => {
+            SecOffsetPtrClass::LocList => {
                 AttrValue::LocListOffset(content.consume_u32_or_u64_address_le(cu.dwarf64))
             }
-            SecOffsetClass::MacPtr => todo!(),
-            SecOffsetClass::RangeListPtr => {
+            SecOffsetPtrClass::Macro => todo!(),
+            SecOffsetPtrClass::RangeList => {
                 AttrValue::RangesOffset(content.consume_u32_or_u64_address_le(cu.dwarf64))
             }
         },

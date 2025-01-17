@@ -114,8 +114,6 @@ impl SectionHeader {
 
 /// The section contains initialized data.
 const IMAGE_SCN_CNT_INITIALIZED_DATA: u32 = 0x00000040;
-/// The section contains uninitialized data.
-const IMAGE_SCN_CNT_UNINITIALIZED_DATA: u32 = 0x00000080;
 
 impl SectionHeader {}
 

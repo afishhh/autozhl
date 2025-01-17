@@ -1,5 +1,3 @@
-use std::fmt::{Debug, Display};
-
 pub trait SliceExt<'a> {
     fn consume_chunk<const N: usize>(&mut self) -> &'a [u8; N];
     fn consume_n(&mut self, n: usize) -> &'a [u8];

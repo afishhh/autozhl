@@ -2,6 +2,7 @@ use std::num::NonZeroUsize;
 
 use crate::aho_corasick::AhoCorasick;
 
+#[cfg_attr(not(test), expect(dead_code))]
 pub fn find_signature(bytes: &[u8], offset: usize) -> Option<NonZeroUsize> {
     let mut result = [None];
     find_signature_many(bytes, &[offset], &mut result, false);

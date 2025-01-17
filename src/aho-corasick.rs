@@ -84,13 +84,6 @@ impl AhoCorasick {
         result
     }
 
-    pub fn construct(strings: &[&[u8]]) -> Self {
-        Self::construct_with(
-            strings.iter().map(|s| s.len()).sum(),
-            strings.iter().copied(),
-        )
-    }
-
     fn t_get(&self, n: usize, c: u8) -> usize {
         self.nodes[n].get(&c).copied().unwrap_or(0)
     }

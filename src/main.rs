@@ -17,7 +17,6 @@ use sig::find_signature_many;
 
 #[path = "aho-corasick.rs"]
 mod aho_corasick;
-mod arena;
 mod dwarf;
 mod elf;
 mod pe;
@@ -53,10 +52,6 @@ fn error(args: std::fmt::Arguments) {
     eprintln!("[\x1b[1;38;5;196m-\x1b[0m] {args}")
 }
 
-fn plus(args: std::fmt::Arguments) {
-    eprintln!("[\x1b[1;38;5;226m*\x1b[0m] {args}");
-}
-
 #[macro_export]
 macro_rules! warn {
     ($($args: tt)*) => { $crate::warn(format_args!($($args)*)) };
@@ -74,6 +69,8 @@ enum SignatureVerify {
     Found(usize),
 }
 
+// TODO: make it work with the prefix stuff
+#[expect(dead_code)]
 fn verify_unique(bytes: &[u8], signature: &[u8]) -> SignatureVerify {
     let mut it = memchr::memmem::find_iter(bytes, signature);
     let idx = match it.next() {
