@@ -102,7 +102,7 @@ pub struct Symbol<'a> {
 }
 
 pub struct ExecutableSections<'a> {
-    pub base: u64,
+    pub fn_address_base: Option<u64>,
     pub memory: Vec<u8>,
     pub dwarf: Option<DwarfSections<'a>>,
     pub symbols: Vec<Symbol<'a>>,
@@ -266,7 +266,8 @@ pub fn load_elf<'a>(file: &'a [u8], verbose: bool) -> ExecutableSections<'a> {
     }
 
     ExecutableSections {
-        base,
+        // TODO:
+        fn_address_base: None,
         memory,
         dwarf: Some(dwarf_sections),
         symbols,

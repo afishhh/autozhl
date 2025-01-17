@@ -195,7 +195,7 @@ pub fn load_pe(file: &[u8], verbose: bool) -> ExecutableSections {
     };
 
     let mut result = ExecutableSections {
-        base: 0,
+        fn_address_base: None,
         memory: Vec::new(),
         dwarf: None,
         symbols: Vec::new(),
@@ -258,7 +258,10 @@ pub fn load_pe(file: &[u8], verbose: bool) -> ExecutableSections {
         // );
     }
 
-    result.base = concat_sections(&mut result.memory, &mut section_data, verbose);
+    concat_sections(&mut result.memory, &mut section_data, verbose);
+
+    result.fn_address_base =
+        Some(optional_header.image_base as u64 + optional_header.base_of_code as u64);
 
     let syms = unsafe {
         std::slice::from_raw_parts(

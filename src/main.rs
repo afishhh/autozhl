@@ -497,11 +497,19 @@ fn main() {
             continue;
         }
 
-        let Some(ip_start) = fun
+        let dwarf_ip = fun
+            .ip_range
+            .as_ref()
+            .filter(|x| x.start != 0)
+            .and_then(|x| sections.fn_address_base.map(|b| (x.start - b) as usize));
+        let symbol_ip = fun
             .linkage_name
             .and_then(|n| sym_to_addr.get(n.to_bytes()).copied())
-            .map(|a| a as usize)
-        else {
+            .map(|a| a as usize);
+
+        // eprintln!("{dwarf_ip:?} {symbol_ip:?} {:?}", sections.fn_address_base);
+
+        let Some(ip_start) = symbol_ip.or(dwarf_ip) else {
             if args.verbose {
                 eprintln!("failed to determine address for {cppname}()");
             }
