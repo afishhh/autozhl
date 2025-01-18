@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-#[repr(C)]
+#[repr(C, packed)]
 struct CoffHeader {
     machine: u16,
     number_of_sections: u16,
@@ -23,7 +23,7 @@ const IMAGE_FILE_MACHINE_I386: u16 = 0x14c;
 const IMAGE_FILE_EXECUTABLE_IMAGE: u16 = 0x0002;
 
 #[derive(Debug, Clone, Copy)]
-#[repr(C)]
+#[repr(C, packed)]
 struct OptionalHeader {
     magic: u16,
     major_linker_version: u8,
@@ -91,7 +91,7 @@ impl Debug for SectionHeaderName {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[repr(C)]
+#[repr(C, packed)]
 struct SectionHeader {
     name: SectionHeaderName,
     virtual_size: u32,
@@ -166,7 +166,7 @@ pub fn load_pe(file: &[u8], verbose: bool) -> ExecutableSections {
     assert_eq!(&pe_bytes.consume_n(4), b"PE\0\0");
 
     let coff = unsafe { pe_bytes.consume_struct::<CoffHeader>() };
-    assert_eq!(coff.machine, IMAGE_FILE_MACHINE_I386);
+    assert_eq!({ coff.machine }, IMAGE_FILE_MACHINE_I386);
     assert!(coff.characteristics & IMAGE_FILE_EXECUTABLE_IMAGE != 0);
 
     if verbose {
@@ -175,7 +175,7 @@ pub fn load_pe(file: &[u8], verbose: bool) -> ExecutableSections {
 
     let optional_header = unsafe { pe_bytes.consume_struct::<OptionalHeader>() };
     // executable file image
-    assert_eq!(optional_header.magic, 0x10B);
+    assert_eq!({ optional_header.magic }, 0x10B);
 
     if verbose {
         println!("{:#?}", optional_header);
@@ -221,11 +221,9 @@ pub fn load_pe(file: &[u8], verbose: bool) -> ExecutableSections {
         for shdr in section_headers {
             if shdr.name.resolve(string_table_content) == name {
                 if verbose {
-                    eprintln!(
-                        "{} is at 0x{:08X}",
-                        name.escape_ascii(),
+                    eprintln!("{} is at 0x{:08X}", name.escape_ascii(), {
                         shdr.pointer_to_raw_data
-                    );
+                    });
                 }
                 let content = &shdr.content_in(file);
                 *range = content;

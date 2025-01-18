@@ -10,7 +10,7 @@ type Elf64Xword = u64;
 #[expect(dead_code)]
 type Elf64Sxword = i64;
 
-#[repr(C)]
+#[repr(C, packed)]
 struct Elf64Ehdr {
     e_ident: [u8; 16],      /* ELF identification */
     e_type: Elf64Half,      /* Object file type */
@@ -28,7 +28,7 @@ struct Elf64Ehdr {
     e_shstrndx: Elf64Half,  /* Section name string table index */
 }
 
-#[repr(C)]
+#[repr(C, packed)]
 struct Elf64Shdr {
     sh_name: Elf64Word,       /* Section name */
     sh_type: Elf64Word,       /* Section type */
@@ -54,7 +54,7 @@ impl Elf64Shdr {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[repr(C)]
+#[repr(C, packed)]
 struct Elf64Sym {
     st_name: Elf64Word,
     st_info: u8,
@@ -165,7 +165,7 @@ pub fn load_elf<'a>(file: &'a [u8], verbose: bool) -> ExecutableSections<'a> {
     assert_eq!(hdr.e_ident[6], 1); // version
     assert_eq!(hdr.e_ident[7], ELFOSABI_LINUX);
     assert_eq!(hdr.e_ident[8], 0);
-    assert_eq!(hdr.e_type, ET_EXEC);
+    assert_eq!({ hdr.e_type }, ET_EXEC);
     // trust the other fields are correct
 
     let section_headers = unsafe {
@@ -226,7 +226,7 @@ pub fn load_elf<'a>(file: &'a [u8], verbose: bool) -> ExecutableSections<'a> {
         for shdr in section_headers {
             if unsafe { shstrtab.get(shdr.sh_name as usize) }.to_bytes() == name {
                 if verbose {
-                    eprintln!("{} is at 0x{:08X}", name.escape_ascii(), shdr.sh_offset);
+                    eprintln!("{} is at 0x{:08X}", name.escape_ascii(), { shdr.sh_offset });
                 }
                 let content = unsafe { shdr.content_in(file) };
                 *range = content;
@@ -243,7 +243,7 @@ pub fn load_elf<'a>(file: &'a [u8], verbose: bool) -> ExecutableSections<'a> {
     for shdr in section_headers {
         if unsafe { shstrtab.get(shdr.sh_name as usize) } == c".symtab" {
             if verbose {
-                eprintln!("symbol table is at 0x{:08X}", shdr.sh_offset);
+                eprintln!("symbol table is at 0x{:08X}", { shdr.sh_offset });
             }
             let content = unsafe { shdr.content_in(file) };
             let syms = unsafe {
