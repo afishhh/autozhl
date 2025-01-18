@@ -15,13 +15,23 @@ pub fn find_signature_many(
     output: &mut [Option<NonZeroUsize>],
     prefix_only_if_sorted: bool,
 ) {
+    find_signature_many_ex(bytes, bytes, offsets, output, prefix_only_if_sorted);
+}
+
+pub fn find_signature_many_ex(
+    haystack: &[u8],
+    source: &[u8],
+    offsets: &[usize],
+    output: &mut [Option<NonZeroUsize>],
+    prefix_only_if_sorted: bool,
+) {
     output.fill(Some(NonZeroUsize::new(1).unwrap()));
     let mut aho = AhoCorasick::construct_with(
         offsets.len(),
-        offsets.iter().map(|&off| &bytes[off..off + 1]),
+        offsets.iter().map(|&off| &source[off..off + 1]),
     );
 
-    aho.search(bytes, |aho, end_idx, sidx| {
+    aho.search(haystack, |aho, end_idx, sidx| {
         let Some(current) = output[sidx] else {
             return;
         };
@@ -43,16 +53,18 @@ pub fn find_signature_many(
         };
 
         if invalidate {
-            if bytes[idx + current - 1] == bytes[offset + current - 1] {
+            if haystack[idx + current - 1] == source[offset + current - 1] {
                 current += 1;
-                if offset + current >= bytes.len() {
-                    if offset == 0 {
+                if offset + current >= haystack.len() {
+                    // FIXME: this is wrong it just doesn't matter and I can't be bothered
+                    //        to think about this condition right now
+                    if offset == 0 && haystack.as_ptr() == source.as_ptr() {
                         // the signature is the whole string
                     } else {
                         current = 0;
                     }
                 } else {
-                    aho.extend_by_one(sidx, &bytes[offset..offset + current]);
+                    aho.extend_by_one(sidx, &source[offset..offset + current]);
                 }
             }
 

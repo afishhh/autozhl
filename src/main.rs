@@ -11,9 +11,9 @@ use std::{
 
 use clap::Parser;
 use dwarf::{collect_dwarf_types, parse_dwarf, print_dwarf_tree};
-use elf::{load_elf, probe_elf};
+use elf::{ExecutableSections, load_elf, probe_elf};
 use pe::load_pe;
-use sig::find_signature_many;
+use sig::find_signature_many_ex;
 
 #[path = "aho-corasick.rs"]
 mod aho_corasick;
@@ -375,6 +375,8 @@ fn zhl_write_result(
 struct Args {
     #[clap(short, long)]
     verbose: bool,
+    #[clap(long)]
+    haystack: Option<PathBuf>,
     binary: PathBuf,
     #[clap(subcommand)]
     subcommand: Subcommand,
@@ -409,15 +411,23 @@ fn stage<R>(name: &str, timed: bool, fun: impl FnOnce() -> R) -> R {
     result
 }
 
+fn load_exe<'a>(bytes: &'a [u8], verbose: bool, prefix: &str) -> ExecutableSections<'a> {
+    if probe_elf(bytes) {
+        stage(&format!("Loading {prefix}ELF file"), true, || {
+            load_elf(bytes, verbose)
+        })
+    } else {
+        stage(&format!("Loading {prefix}PE file"), true, || {
+            load_pe(bytes, verbose)
+        })
+    }
+}
+
 fn main() {
     let args = Args::parse();
 
     let exe = std::fs::read(args.binary).unwrap();
-    let sections = if probe_elf(&exe) {
-        stage("Loading ELF file", true, || load_elf(&exe, args.verbose))
-    } else {
-        stage("Loading PE file", true, || load_pe(&exe, args.verbose))
-    };
+    let sections = load_exe(&exe, args.verbose, "");
 
     if let Subcommand::PrintSyms = args.subcommand {
         for sym in sections.symbols {
@@ -448,6 +458,18 @@ fn main() {
         println!("{items:#?}");
         return;
     }
+
+    let haystack_bytes = args
+        .haystack
+        .as_ref()
+        .map(|path| std::fs::read(path).unwrap());
+    let haystack_sections = haystack_bytes
+        .as_ref()
+        .map(|bytes| load_exe(bytes, args.verbose, "haystack "));
+    let haystack = match haystack_sections.as_ref() {
+        Some(bytes) => &bytes.memory[..],
+        None => &sections.memory[..],
+    };
 
     struct ZhlContext<'a> {
         path: &'a Path,
@@ -584,7 +606,13 @@ fn main() {
 
     let mut signatures = vec![None; addresses.len()];
     stage("Finding signatures", true, || {
-        find_signature_many(&sections.memory, &addresses, &mut signatures, true)
+        find_signature_many_ex(
+            haystack,
+            &sections.memory,
+            &addresses,
+            &mut signatures,
+            true,
+        )
     });
 
     // FIXME: this is no longer correct (prefix_only_if_sorted)

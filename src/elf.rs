@@ -71,6 +71,7 @@ const ELFOSABI_LINUX: u8 = 3;
 const ET_EXEC: Elf64Half = 2;
 const SHT_NOBITS: Elf64Xword = 8;
 
+#[derive(Debug, Clone, Copy)]
 pub struct DwarfSections<'a> {
     // pub aranges: &'a [u8],
     // pub ranges: &'a [u8],
