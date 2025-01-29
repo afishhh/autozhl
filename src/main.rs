@@ -386,9 +386,14 @@ struct Args {
 enum Subcommand {
     DwarfTree,
     DwarfItems,
-    Print,
+    Print(Print),
     PrintSyms,
     PopulateZhl(PopulateZhl),
+}
+
+#[derive(Parser)]
+struct Print {
+    names: Vec<String>,
 }
 
 #[derive(Parser)]
@@ -479,7 +484,11 @@ fn main() {
 
     // this could be an option or smthn i dont care rn
     let (use_filter, filter_set, zhls) = match &args.subcommand {
-        Subcommand::Print => (false, HashSet::new(), Vec::new()),
+        Subcommand::Print(names) => (
+            !names.names.is_empty(),
+            names.names.iter().cloned().collect::<HashSet<_>>(),
+            Vec::new(),
+        ),
         Subcommand::PopulateZhl(cmd) => stage("Reading ZHL", false, || {
             let mut filters = HashSet::new();
             let mut zhls = Vec::new();
@@ -629,7 +638,7 @@ fn main() {
     // }
 
     match args.subcommand {
-        Subcommand::Print => {
+        Subcommand::Print(_) => {
             for ((fun, &addr), &siglen) in functions
                 .iter()
                 .zip(addresses.iter())
