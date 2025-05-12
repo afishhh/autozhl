@@ -172,7 +172,7 @@ impl AhoCorasick {
         let mp = self.t_get(m, c);
         // println!("failure complete: n={n} c={c} np={np} m={m} failure is {mp}");
         self.failure[np] = mp;
-        if let Ok([onp, omp]) = self.output.get_many_mut([np, mp]) {
+        if let Ok([onp, omp]) = self.output.get_disjoint_mut([np, mp]) {
             onp.extend_from_slice(omp);
             onp.sort_unstable();
             onp.dedup();

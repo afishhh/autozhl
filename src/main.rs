@@ -1,5 +1,3 @@
-#![feature(get_many_mut)]
-
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Display, Write},
